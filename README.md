@@ -61,3 +61,150 @@ A técnica *DNS Water Torture*, popularizada pelo Mirai, consiste em enviar subd
 ## Mirai
 
 O malware *Mirai* recrutou dispositivos IoT (câmeras, roteadores) para formar uma botnet massiva e lançar DDoS, incluindo a técnica de *DNS Water Torture*. Variantes modernas exploram subdomínios pseudoaleatórios para exacerbar o consumo de recursos nos servidores DNS, mostrando que o volume de tráfego e a exploração de falhas de protocolo são igualmente críticos.
+
+# Arquitetura da ferramenta
+
+![image](https://github.com/user-attachments/assets/3723d722-c793-4e90-91b8-1c5e465ca9f2)
+
+
+A Eris mantém, inicialmente, a estrutura modular da DamBuster, composta por quatro módulos principais, mas realiza alterações significativas em seu funcionamento para se adequar ao novo modelo de ataque. Os detalhes sobre cada módulo são apresentados a seguir:
+
+### Interface
+
+Módulo em que as interfaces gráfica (GUI) e de linha de comando (CLI) são implementadas. Esse módulo é responsável por receber os argumentos que serão utilizados no ataque.
+
+### Commander
+
+- **commander.c**: Configura o ambiente inicial (por exemplo, definindo ações para erros fatais), inicia o fluxo principal do programa, chamando a lógica de ataque com base nos parâmetros recebidos pela interface. Também cria e sincroniza as _threads_ de ataque, garantindo o encerramento ordenado quando todas finalizam.
+- **manager.c**: Atua como intermediário entre o commander e o módulo Attack.
+
+### Attack
+
+Módulo que contém a lógica principal do ataque _DNS Water Torture_ e também é responsável pela criação dos pacotes que serão enviados durante o ataque. Sua estrutura é dividida em dois submódulos:
+
+- **dnsflood.c**: Gerencia o fluxo de alto nível do ataque _DNS flood_, desde a criação do primeiro pacote até o início do processo de injeção.  
+- **dnsfloodforge.c**: Cuida dos detalhes de baixo nível da construção e preparação de pacotes DNS com subdomínios aleatórios, tornando cada pacote único para garantir a eficácia do ataque.
+
+### Injector
+
+Nesta parte do código, o injector e o controller estão implementados:
+
+- **injector.c**: Gerencia a mecânica detalhada da injeção de pacotes, desde a criação de pacotes DNS até o envio através de sockets de rede.  
+- **controller.c**: Coordena o processo geral de injeção, sincronizando os injectors, controlando o tempo e realizando ajustes dinâmicos durante o ataque.
+
+## Funcionamento
+
+A Eris implementa um ataque de _DNS query flood_ com opção de _spoofing_ do endereço de origem, permitindo o controle do rate dos pacotes enviados e funcionamento _multithread_. A ferramenta necessita dos parâmetros de alvo e domínio e aceita opções de configuração para rate (duration, level, increment ou RAID mode), IP de origem para _spoofing_ e porta (53 por padrão). Por default, a ferramenta envia um pacote por segundo indefinidamente.
+
+A cada pacote enviado, um subdomínio aleatório é gerado, utilizando uma string randômica hexadecimal concatenada com o domínio base, assim como mostrado abaixo:
+
+![image](https://github.com/user-attachments/assets/b39bcd37-1725-45aa-a3ff-176f50dff7e8)
+
+
+Optou-se por gerar nomes de subdomínio hexadecimais para prover deliberadamente uma assinatura detectável para a assinatura gerada pela Eris. Dessa forma, qualquer uso indevido ou indesejável da ferramenta é facilmente identificado e bloqueado com a aplicação da assinatura.
+
+![image](https://github.com/user-attachments/assets/83e762b6-e429-44cc-a155-5bebc9f838c9)
+
+
+A estrutura do log do servidor DNS recursivo possui os campos descritos abaixo:
+
+1. **client @0x796f513bc568**: Identificador interno do BIND que representa a estrutura com os detalhes do cliente.  
+2. **116.24.140.227#53**: O endereço IP e a porta do cliente que fez a consulta DNS.  
+3. **(da6be.sales.com)**: O nome de domínio solicitado.  
+4. **da6be.sales.com IN A +**: Consulta DNS do tipo `A` (IPv4), classe `IN` (Internet), com flag RD ativa (`+`).  
+5. **(192.168.0.4)**: O endereço IP onde a requisição foi direcionada.
+
+O _spoofing_ pode ser observado no endereço de origem (item 2 acima), mascarando a identidade do host real. Por default, a ferramenta randomiza um IP de origem se nenhum for passado; aceita também uma lista de IPs, criando uma thread de ataque para cada IP, simulando um tráfego distribuído.
+
+## Estratégias de Uso da Eris para Teste de Resiliência de Servidores DNS
+
+A Eris foi desenvolvida para simular ataques do tipo DNS Water Torture de maneira altamente configurável. Três estratégias comuns:
+
+### Teste Incremental de Carga
+
+Inicia com taxa de envio baixa e aumenta progressivamente. Permite determinar o ponto de saturação do servidor e limites operacionais.
+
+### Teste em Modo RAID para Máxima Vazão
+
+Ignora parâmetros de incremento, enviando ao máximo de consultas por segundo, ideal para avaliar colapso sob alta intensidade.
+
+### Simulação de Ataque Distribuído com Spoofing Múltiplo
+
+Fornecendo uma lista de IPs de origem, a ferramenta cria múltiplas threads de ataque, aproximando-se do comportamento de uma botnet:
+
+![Logs do servidor DNS recursivo recebendo pacotes de 3 ips distintos](imagens/spoof_ip_list.png)
+
+O funcionamento _multithread_ segue o diagrama abaixo:
+
+![image](https://github.com/user-attachments/assets/903bf232-2294-4ec5-bf51-8a66aa43acbe)
+
+
+## Parâmetros
+
+**Obrigatórios**  
+- **Endereço de Destino**: IPv4 do alvo.  
+- **Domínio**: domínio base para subdomínios.
+
+**Opcionais**  
+- **Endereço de Origem**: IP ou lista para _spoofing_.  
+- **Portas**: origem (padrão 53) e destino (padrão 53).  
+- **Duração**: em milissegundos (por default roda até CTRL+C).  
+- **Nível de Ataque**: 1–10 (cada nível = 10^(level–1) queries por iteração).  
+- **Modo Incremental**: frequência de aumento de nível.  
+- **Modo RAID**: envia máxima taxa, ignorando níveis.  
+- **Arquivo de Taxa**: personaliza taxas por nível.  
+- **Intervalo Base**: intervalo entre iterações (padrão 1 s).
+
+## Execução
+
+A execução divide-se em três etapas:
+
+### Configuração
+
+Processa os parâmetros para criar o “draft” do plano de ataque (CLI ou GUI).
+
+### Construção de Pacotes
+
+- Gera cabeçalho DNS com Transaction ID aleatório, tipo `A`, classe `IN`.  
+- Concatena subdomínio hexadecimal ao domínio base, transforma em etiquetas DNS.  
+- Monta cabeçalhos IP/UDP com origem e destino.  
+- Opcionalmente altera IP de origem para _spoofing_.  
+- Empacota em “packet wrapper” antes do envio.
+
+### Injeção de Pacotes
+
+- O módulo commander aciona o plano criado pelo manager.  
+- Controller sincroniza injectors; cada injector abre socket raw e chama `ReForgeDnsPacket` para gerar novas queries.  
+- Em _multithread_ e múltiplos IPs, faz cópias profundas (`malloc` + `memcpy`) para cada origem distinta, garantindo independência dos pacotes.
+
+## Usabilidade
+
+### Interface por linha de comando
+
+Saída no terminal exibe nível, pacotes enviados, drop rate, IPs de origem/destino:
+
+![image](https://github.com/user-attachments/assets/0eac747a-ad2c-4d67-934c-6dec29c4da4f)
+
+
+### Interface gráfica
+
+- Parâmetro visualização em GUI:
+
+![image](https://github.com/user-attachments/assets/15eef3a6-da39-4340-843e-858b2b53ef26)
+
+
+- Aba **Output** (logs iguais ao CLI):
+
+![image](https://github.com/user-attachments/assets/2e30d41d-46e1-4729-90aa-e6a2d1ba2837)
+
+
+- Aba **Results** (gráfico de desempenho):
+
+![image](https://github.com/user-attachments/assets/d37dba7d-c62b-4d32-b7aa-14ae0494c88d)
+
+
+## Disponibilização
+
+Disponível como código-fonte no GitLab e imagem Docker no Docker Hub, facilitando uso sem configurações adicionais.
+
+
