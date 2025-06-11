@@ -96,12 +96,10 @@ Nesta parte do código, o injector e o controller estão implementados:
 
 A Eris implementa um ataque de _DNS query flood_ com opção de _spoofing_ do endereço de origem, permitindo o controle do rate dos pacotes enviados e funcionamento _multithread_. A ferramenta necessita dos parâmetros de alvo e domínio e aceita opções de configuração para rate (duration, level, increment ou RAID mode), IP de origem para _spoofing_ e porta (53 por padrão). Por default, a ferramenta envia um pacote por segundo indefinidamente.
 
-A cada pacote enviado, um subdomínio aleatório é gerado, utilizando uma string randômica hexadecimal concatenada com o domínio base, assim como mostrado abaixo:
+A cada pacote enviado, um subdomínio aleatório é gerado, utilizando uma string randômica concatenada com o domínio base, assim como mostrado abaixo:
 
 ![image](https://github.com/user-attachments/assets/b39bcd37-1725-45aa-a3ff-176f50dff7e8)
 
-
-Optou-se por gerar nomes de subdomínio hexadecimais para prover deliberadamente uma assinatura detectável para a assinatura gerada pela Eris. Dessa forma, qualquer uso indevido ou indesejável da ferramenta é facilmente identificado e bloqueado com a aplicação da assinatura.
 
 ![image](https://github.com/user-attachments/assets/83e762b6-e429-44cc-a155-5bebc9f838c9)
 
