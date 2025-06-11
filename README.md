@@ -124,15 +124,28 @@ A Eris foi desenvolvida para simular ataques do tipo DNS Water Torture de maneir
 
 Inicia com taxa de envio baixa e aumenta progressivamente. Permite determinar o ponto de saturação do servidor e limites operacionais.
 
+```
+bin/eris -D dominioalvo.com -t [ip alvo] -d duração total  -l [nível de ataque] -i [quantidade de iterações até o próximo nível de ataque] -z [duração de cada iteração]
+
+```
+
 ### Teste em Modo RAID para Máxima Vazão
 
 Ignora parâmetros de incremento, enviando ao máximo de consultas por segundo, ideal para avaliar colapso sob alta intensidade.
+
+```
+bin/eris -D dominioalvo.com -t [ip alvo] -d duração total do ataque -r
+
+```
 
 ### Simulação de Ataque Distribuído com Spoofing Múltiplo
 
 Fornecendo uma lista de IPs de origem, a ferramenta cria múltiplas threads de ataque, aproximando-se do comportamento de uma botnet:
 
-![Logs do servidor DNS recursivo recebendo pacotes de 3 ips distintos](imagens/spoof_ip_list.png)
+```
+bin/eris -D dominioalvo.com -t [ip alvo] -d duração total do ataque -s [path para o arquivo que contêm os ips de origem] [demais argumentos]
+
+```
 
 O funcionamento _multithread_ segue o diagrama abaixo:
 
