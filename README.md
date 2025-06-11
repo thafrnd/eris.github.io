@@ -221,3 +221,86 @@ Saída no terminal exibe nível, pacotes enviados, drop rate, IPs de origem/dest
 Disponível como código-fonte no GitLab e imagem Docker no Docker Hub, facilitando uso sem configurações adicionais.
 
 
+# Testes realizados
+
+## Ambiente para teste bare metal
+
+O ambiente para teste foi montado utilizando 5 máquinas físicas, todas conectadas de forma wireless ao mesmo roteador TP-Link TL-WR829N. Para isolar a rede, o roteador foi configurado como **Access Point** isolado (sem uplink para Internet).
+
+![image](https://github.com/user-attachments/assets/56be3c6b-b6fc-488c-93b1-a261138afd17)
+
+
+Assim como no ambiente virtual, o serviço de DNS, em ambos os servidores, foi configurado usando o software BIND9. O servidor DNS recursivo possui a recursão ativada e consulta o servidor autoritativo em busca dos registros definitivos do domínio requisitado.
+
+Os usuários legítimos foram utilizados para medir os tempos de resposta dos servidores DNS sob ataque, realizando uma _query_ DNS por segundo cada.
+
+| Nome                         | Processador                           | Memória                |
+|------------------------------|---------------------------------------|------------------------|
+| Atacante                     | Intel Core i7-14700K @ 3,40 GHz       | 32 GB DDR4 @ 3600 MHz  |
+| Servidor DNS recursivo       | Intel Core i5-4200U @ 1,60 GHz        | 6 GB DDR3 @ 1600 MHz   |
+| Servidor DNS autoritativo    | Intel Core i3-3217U @ 1,80 GHz        | 4 GB DDR3 @ 1600 MHz   |
+| Usuário 1                    | Apple M2 chip (2022)                  | 8 GB                   |
+| Usuário 2                    | Intel Core i5 @ 1,40 GHz              | 8 GB DDR3 @ 2400 MHz   |
+| Roteador TP-Link TL-WR829N   | Single-Core CPU                       | 32 MB DDR2             |
+
+O ambiente bare metal foi utilizado para a execução do cenário 2 deste capítulo.
+
+---
+
+## Cenário de teste
+
+Neste cenário, usou-se o **modo RAID** em ambiente bare metal. Dois usuários legítimos fizeram 1 query/s cada: um para o DNS recursivo e outro para o autoritativo.
+
+**Objetivos do teste:**
+1. **Rampa de subida ao throughput máximo:** medir o tempo para atingir a capacidade plena de envio.
+2. **Realismo do tráfego:** verificar se as queries são tratadas como legítimas, forçando o recursivo a encaminhar ao autoritativo (efeito dominó).
+3. **Capacidade de resiliência:** volume máximo de requisições simultâneas atendidas aos usuários legítimos.
+
+**Coleta e métricas (via `tshark`):**
+
+| Tráfego                         | Ponto de Captura                              | Destino                   | Objetivo da Medição                                               |
+|---------------------------------|-----------------------------------------------|---------------------------|-------------------------------------------------------------------|
+| Tráfego do Atacante             | Pacotes saindo da máquina do atacante         | Servidor DNS recursivo    | Quantificar requisições maliciosas geradas em modo RAID           |
+| Resposta do Recursivo           | Pacotes saindo do servidor DNS recursivo      | Máquina do usuário 1      | Avaliar até quando o recursivo atende as requisições legítimas    |
+| Resposta do Autoritativo        | Pacotes saindo do servidor DNS autoritativo   | Máquina do usuário 2      | Avaliar até quando o autoritativo responde às requisições legítimas |
+
+Cada fluxo foi registrado em um PCAP separado (número de pacotes, picos de PPS, intervalos sem resposta).
+
+**Critério de falha:**  
+Falha quando o DNS deixa de responder de maneira continua a (1 req/s).
+
+**Resultados esperados:**  
+- Pico de PPS quase imediato em modo RAID  
+- Tráfego malicioso superior ao do ambiente virtual  
+- Efeito dominó: recursivo e autoritativo sobrecarregados  
+- Tempo até falha mensurado pelas capturas de resposta  
+
+
+## Resultados obtidos
+
+O resultado da execução da ferramenta em modo RAID no ambiente bare metal pode ser observado na imagem abaixo, onde o gráfico vermelho representa o volume de pacotes que deixa a máquina do atacante e o azul representa o tráfego recebido pelo servidor DNS recursivo.
+
+![image](https://github.com/user-attachments/assets/b6ddae0b-d881-430e-b544-f560ba90fbd8)
+
+
+Pode-se observar que a ferramenta atingiu a saturação da taxa de envio de pacotes entre o segundo 0 e 1 de execução. A maior taxa observada foi de 126.791 packets/s no primeiro segundo do ataque, confirmando os resultados esperados para esse cenário de uma taxa de saturação mais alta que a do anterior.
+
+No entanto, também foi observada uma grande discrepância entre a quantidade de pacotes enviados e a quantidade recebida pelo alvo, como mostrado na tabela abaixo:
+
+| Pacotes                                 | Ambiente bare metal    |
+|-----------------------------------------|------------------------|
+| Maior taxa enviada pelo Atacante        | 126.791 packets/s      |
+| Maior taxa recebida pelo Alvo           | 7.958 packets/s        |
+
+Nesse cenário, o DNS recursivo deixa de responder ao usuário 1 logo nos primeiros segundos do ataque, conforme registrado no gráfico abaixo:
+
+![image](https://github.com/user-attachments/assets/455c5032-5b73-457d-b5e9-c94e2924e5d8)
+
+O servidor autoritativo deixa de responder ao usuário 2 um segundo após o recursivo, como mostrado no gráfico abaixo:
+
+![image](https://github.com/user-attachments/assets/601d9df2-a465-430b-97ea-1e761b1cc35a)
+
+
+A resposta dos servidores confirma que o tráfego malicioso está sendo propagado entre os servidores alvo.  
+
+
