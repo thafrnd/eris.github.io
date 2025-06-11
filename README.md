@@ -9,7 +9,7 @@ Um ataque de negação de serviço, ou DoS, tem como objetivo comprometer o pila
   - **Diretos**: o tráfego vai diretamente da fonte ao alvo.  
   - **Por reflexão**: utilizam “refletores” (dispositivos que respondem ao tráfego) para amplificar o volume, enviando respostas ao IP da vítima (spoofing).  
 
-- **Ataques de protocolo (low-and-slow)**: enviam tráfego em menor volume, porém cuidadosamente arquitetado para explorar falhas específicas dos protocolos (por exemplo, exaurir conexões ou threads), causando indisponibilidade gradual com pouco consumo de banda [^2].
+- **Ataques de protocolo (low-and-slow)**: enviam tráfego em menor volume, porém cuidadosamente arquitetado para explorar falhas específicas dos protocolos (por exemplo, exaurir conexões ou threads), causando indisponibilidade gradual com pouco consumo de banda.
 
 Neste trabalho, focamos em ataques DoS diretos que exploram o protocolo DNS e suas vulnerabilidades, gerando alto número de requisições por segundo.
 
