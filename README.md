@@ -299,6 +299,8 @@ No entanto, também foi observada uma grande discrepância entre a quantidade de
 | Maior taxa enviada pelo Atacante        | 126.791 packets/s      |
 | Maior taxa recebida pelo Alvo           | 7.958 packets/s        |
 
+Dessa forma, sendo necessário levar em conta a taxa recebida pelo alvo para determinar até que volumetria o alvo se manteve resiliente. 
+
 Nesse cenário, o DNS recursivo deixa de responder ao usuário 1 logo nos primeiros segundos do ataque, conforme registrado no gráfico abaixo:
 
 ![image](https://github.com/user-attachments/assets/455c5032-5b73-457d-b5e9-c94e2924e5d8)
