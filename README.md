@@ -22,10 +22,12 @@ O Sistema de Nomes de Domínio (DNS) traduz nomes legíveis (e.g., `www.example.
 3. **Servidores autoritativos**: armazenam os registros definitivos (A, AAAA, MX, NS, etc.).  
 4. **Servidores recursivos**: recebem a consulta do cliente, verificam o cache e, se necessário, fazem buscas iterativas na hierarquia até obter a resposta, armazenando-a em cache para otimizar futuras consultas.
 
-![Fluxo de resolução DNS](imagens/dns_general.png)  
+![image](https://github.com/user-attachments/assets/25ee1f14-834b-4a95-b542-7330a87a2c37)
+
 *Figura: Fluxo de resolução DNS.*
 
-![Zonas DNS](imagens/dns_zones.jpeg)  
+![image](https://github.com/user-attachments/assets/3e36832f-4630-4db0-9d39-1d620bd8d168)
+
 *Figura: Exemplo de zonas DNS para `sales.com`.*
 
 ## Water Torture
@@ -37,7 +39,7 @@ A técnica *DNS Water Torture*, popularizada pelo Mirai, consiste em enviar subd
 3. Como não há resposta em cache, cada query percorre toda a hierarquia, sobrecarregando recursivos e autoritativos.  
 4. Em ataques distribuídos, o impacto é exponencial.
 
-![Bytes de uma consulta gerada pela Eris](imagens/raw_byte.jpeg)  
+![image](https://github.com/user-attachments/assets/c112a45a-e2a6-4480-954d-942806538a6e)
 *Figura: Bytes de uma consulta gerada pela Eris.*
 
 - **ID**: identificador da transação DNS.  
@@ -47,13 +49,13 @@ A técnica *DNS Water Torture*, popularizada pelo Mirai, consiste em enviar subd
 - **QTYPE**: tipo de registro (A para IPv4).  
 - **QCLASS**: classe do registro (IN para Internet).
 
-![Ilustração das consultas realizadas pelo Mirai](imagens/mirai_query.png)  
+![image](https://github.com/user-attachments/assets/3656b8f5-1501-423a-ba80-9622eda5f622)
 *Figura: Consultas do Mirai.*  
 
-![Ilustração das consultas realizadas pela Eris](imagens/query_eris.jpg)  
+![image](https://github.com/user-attachments/assets/477d8a47-b9f4-45ad-838c-503c65a7c614)
 *Figura: Consultas da ferramenta Eris.*  
 
-![Técnica de DNS Water Torture](imagens/water-tortute-akamai.png)  
+![image](https://github.com/user-attachments/assets/de6b0079-8ab0-44db-af36-d49feee062d7)
 *Figura: Fluxo da técnica Water Torture.*
 
 ## Mirai
