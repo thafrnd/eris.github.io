@@ -125,7 +125,14 @@ A Eris foi desenvolvida para simular ataques do tipo DNS Water Torture de maneir
 Inicia com taxa de envio baixa e aumenta progressivamente. Permite determinar o ponto de saturação do servidor e limites operacionais.
 
 ```
-bin/eris -D dominioalvo.com -t [ip alvo] -d duração total  -l [nível de ataque] -i [quantidade de iterações até o próximo nível de ataque] -z [duração de cada iteração]
+bin/eris -D dominioalvo.com -t [ip alvo] -d duração total  -l [nível de ataque] -i [quantidade de iterações até o próximo nível de ataque] (opicional: -z [duração de cada iteração])
+
+```
+
+Pode também ser feito utilizando um aquivo de taxa, onde a vazão para cada nível é personalizada.
+
+```
+bin/eris -D dominioalvo.com -t [ip alvo] -d duração total  -i [quantidade de iterações até o próximo nível de ataque] -e [path para o arquivo onde as taxas de cada nível estão definidas] (opicional: -z [duração de cada iteração])
 
 ```
 
